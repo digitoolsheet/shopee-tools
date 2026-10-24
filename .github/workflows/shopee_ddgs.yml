@@ -1,0 +1,78 @@
+name: Shopee Related Finder (DuckDuckGo)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Tracker mana yang mau dijalankan?"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - tracker1
+          - tracker2
+          - tracker3
+  schedule:
+    # 2x sehari, selang 12 jam. Jam di bawah dalam UTC (WIB = UTC + 7).
+    - cron: "17 20 * * *"  # 03:17 WIB (dini hari)
+    - cron: "17 8 * * *"   # 15:17 WIB (sore)
+
+jobs:
+  related-finder:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install ddgs google-api-python-client google-auth
+
+      # Semua tracker dijalankan BERURUTAN dalam satu job (bukan paralel),
+      # supaya DuckDuckGo tidak kena rate-limit karena 3 tracker request bareng.
+      # continue-on-error: kalau satu tracker gagal, tracker berikutnya tetap jalan.
+
+      # Tracker 1 (kolom: J = keyword, S = Link Produk Sejenis)
+      - name: Related Finder — Tracker 1
+        if: github.event_name == 'schedule' || github.event.inputs.target == 'all' || github.event.inputs.target == 'tracker1'
+        continue-on-error: true
+        env:
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHEET_NAME: "Tracker"
+          KEYWORD_COL: "J"
+          LINK_COL: "S"
+          MAX_ROWS: "50"
+        run: python shopee_related_ddgs.py
+
+      # Tracker 2
+      - name: Related Finder — Tracker 2
+        if: github.event_name == 'schedule' || github.event.inputs.target == 'all' || github.event.inputs.target == 'tracker2'
+        continue-on-error: true
+        env:
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID_TRACKER2 }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHEET_NAME: "Tracker"
+          KEYWORD_COL: "J"
+          LINK_COL: "S"
+          MAX_ROWS: "50"
+        run: python shopee_related_ddgs.py
+
+      # Tracker 3 (fokus: proses sampai 100 baris per run)
+      - name: Related Finder — Tracker 3
+        if: github.event_name == 'schedule' || github.event.inputs.target == 'all' || github.event.inputs.target == 'tracker3'
+        continue-on-error: true
+        env:
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID_TRACKER3 }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHEET_NAME: "Tracker"
+          KEYWORD_COL: "J"
+          LINK_COL: "S"
+          MAX_ROWS: "50"
+        run: python shopee_related_ddgs.py
