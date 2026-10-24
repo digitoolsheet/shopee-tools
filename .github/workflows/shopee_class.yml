@@ -1,0 +1,73 @@
+name: Shopee Category Classifier
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Tracker mana yang mau dijalankan?"
+        required: true
+        default: "all"
+        type: choice
+        options:
+          - all
+          - tracker1
+          - tracker2
+          - tracker3
+  schedule:
+    - cron: '0 */12 * * *'  # tiap 12 jam, otomatis jalanin SEMUA tracker (berurutan)
+
+jobs:
+  classifier:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - run: pip install -r requirements.txt
+
+      # Semua tracker dijalankan BERURUTAN dalam satu job (bukan paralel),
+      # supaya kuota Groq (satu akun, dipakai bareng) tidak habis serentak.
+      # continue-on-error: kalau satu tracker gagal, tracker berikutnya tetap jalan.
+
+      # Tracker 1 (kolom: I = Nama Produk, T = Kategori)
+      - name: Classifier — Tracker 1
+        if: github.event_name == 'schedule' || github.event.inputs.target == 'all' || github.event.inputs.target == 'tracker1'
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHEET_NAME: "Tracker"
+          PRODUCT_COL: "I"
+          CATEGORY_COL: "T"
+        run: python shopee_class.py
+
+      # Tracker 2
+      - name: Classifier — Tracker 2
+        if: github.event_name == 'schedule' || github.event.inputs.target == 'all' || github.event.inputs.target == 'tracker2'
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID_TRACKER2 }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHEET_NAME: "Tracker"
+          PRODUCT_COL: "I"
+          CATEGORY_COL: "T"
+        run: python shopee_class.py
+
+      # Tracker 3
+      - name: Classifier — Tracker 3
+        if: github.event_name == 'schedule' || github.event.inputs.target == 'all' || github.event.inputs.target == 'tracker3'
+        continue-on-error: true
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+          SPREADSHEET_ID: ${{ secrets.SPREADSHEET_ID_TRACKER3 }}
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHEET_NAME: "Tracker"
+          PRODUCT_COL: "I"
+          CATEGORY_COL: "T"
+        run: python shopee_class.py
