@@ -48,7 +48,7 @@ jobs:
           SHEET_NAME: "Tracker"
           KEYWORD_COL: "J"
           LINK_COL: "S"
-          MAX_ROWS: "50"
+          MAX_ROWS: "100"
         run: python shopee_related_ddgs.py
 
       # Tracker 2
@@ -61,7 +61,7 @@ jobs:
           SHEET_NAME: "Tracker"
           KEYWORD_COL: "J"
           LINK_COL: "S"
-          MAX_ROWS: "50"
+          MAX_ROWS: "100"
         run: python shopee_related_ddgs.py
 
       # Tracker 3 (fokus: proses sampai 100 baris per run)
@@ -74,5 +74,5 @@ jobs:
           SHEET_NAME: "Tracker"
           KEYWORD_COL: "J"
           LINK_COL: "S"
-          MAX_ROWS: "50"
+          MAX_ROWS: "100"
         run: python shopee_related_ddgs.py
