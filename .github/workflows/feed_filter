@@ -1,0 +1,30 @@
+name: Shopee Feed Filter
+
+on:
+  schedule:
+    - cron: "17 23 * * *"   # setiap hari 06:17 WIB (23:17 UTC)
+  workflow_dispatch:         # tombol "Run workflow" untuk jalan manual
+
+concurrency:
+  group: feed-filter
+  cancel-in-progress: false
+
+jobs:
+  filter:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -q pandas gspread
+
+      - name: Run feed_filter_gh.py
+        env:
+          GOOGLE_SERVICE_ACCOUNT_JSON: ${{ secrets.GOOGLE_SERVICE_ACCOUNT_JSON }}
+          SHEET_URL: ${{ secrets.SHEET_URL }}
+        run: python feed_filter_gh.py
